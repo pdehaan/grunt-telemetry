@@ -1,15 +1,14 @@
 'use strict';
 
 module.exports = function(grunt) {
-  grunt.initConfig({
-    telemetry: {
-      main: {
-        src: ['test/*.html']
-      }
-    }
-  });
+	grunt.initConfig({
+		telemetry: {
+			all: {
+				src: ['test/*.html']
+			}
+		}
+	});
+	grunt.loadTasks('./tasks');
 
-  grunt.loadTasks('tasks');
-
-  grunt.registerTask('default', ['telemetry']);
+	grunt.registerTask('default', ['telemetry']);
 };

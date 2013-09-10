@@ -1,49 +1,64 @@
-'use strict';
-
 module.exports = function(grunt) {
 	grunt.registerMultiTask('telemetry', 'Runs telemetry tests on specified files', function() {
-
-		var pageScripts = ['\n<script type = "text/javascript">\n'];
-		['smoothness_measurement.js', 'scroll.js', 'benchmarks.js'].forEach(function(file) {
-			pageScripts.push(grunt.file.read(grunt.file.expand(__dirname + '/page_scripts/' + file)));
-		});
-		pageScripts.push('\n</script>\n');
-
-		function modifyHTML(src) {
-
-		};
-
 		var done = this.async();
-		this.files.forEach(function(f) {
-			var src = f.src.filter(function(filepath) {
-				// Warn on and remove invalid source files (if nonull was set).
-				if (!grunt.file.exists(filepath)) {
-					grunt.log.warn('Source file "' + filepath + '" not found.');
-					return false;
-				} else {
-					return true;
-				}
-			});
 
-			if (src.length === 0) {
-				grunt.log.warn('No source files specified');
-				return;
-			}
+		var www = __dirname + '/tmp',
+			filesSrc = this.filesSrc;
+		grunt.file.mkdir(www);
+		addTelemetryScripts(this.filesSrc, www);
 
-			grunt.file.mkdir(__dirname + '/tmp');
-			src.forEach(function(file) {
-				var html = grunt.file.read(file);
-				if (html.match(/<head>/)) {
-					html = html.replace(/<head>/, '<head>' + pageScripts.join(''));
-				} else if (html.match(/<body>/)) {
-					html = html.replace(/<body>/, '<body>' + pageScripts.join(''));
-				} else if (html.match(/<html>/)) {
-					html = html.replace(/<html>/, '<html>' + pageScripts.join(''));
+		var express = require('express');
+		var app = express();
+		app.use(express.static(www));
+		app.post('/data', function(req, res) {
+			// TODO - collect all data
+			console.log(req);
+			res.send('');
+			//process.kill(browserProcessId);
+			// TODO - Launch next browser
+		});
+		app.listen(3000);
+
+		var browserProcessId = null;
+		var launcher = require('browser-launcher');
+		launcher(function(err, launch) {
+			// TODO - Launch all browsers as configured
+			launch('http://localhost:3000/' + filesSrc[0], {
+				browser: 'ie'
+			}, function(err, ps) {
+				if (err) {
+					grunt.log.err(err);
 				} else {
-					html = pageScripts.join() + html;
+					browserProcessId = ps.pid;
 				}
-				grunt.file.write(__dirname + '/tmp/' + file, html);
 			});
 		});
 	});
+
+	function addTelemetryScripts(filesSrc, destDir) {
+		var pageScripts = ['\n<script type = "text/javascript">\n'];
+		['smoothness_measurement.js', 'scroll.js', 'benchmarks.js'].forEach(function(file) {
+			pageScripts.push(grunt.file.read(grunt.file.expand(__dirname + '/lib/page_scripts/' + file)));
+		});
+		pageScripts.push('\n</script>\n');
+
+		filesSrc.forEach(function(file) {
+			if (!grunt.file.exists(file)) {
+				grunt.log.warn('Source file "' + file + '" not found.');
+				return false;
+			}
+			var html = grunt.file.read(file);
+			if (html.match(/<head>/)) {
+				html = html.replace(/<head>/, '<head>' + pageScripts.join(''));
+			} else if (html.match(/<body>/)) {
+				html = html.replace(/<body>/, '<body>' + pageScripts.join(''));
+			} else if (html.match(/<html>/)) {
+				html = html.replace(/<html>/, '<html>' + pageScripts.join(''));
+			} else {
+				html = pageScripts.join() + html;
+			}
+			grunt.file.write(destDir + '/' + file, html);
+		});
+	}
+
 }
