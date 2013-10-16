@@ -1,0 +1,22 @@
+{
+  "browsers": {
+    "local": [
+      {
+        "command": "C:\\Program Files\\Internet Explorer\\iexplore.exe",
+        "version": "9.11.9600.16384",
+        "windows": true,
+        "name": "ie",
+        "type": "ie",
+        "profile": false
+      },
+      {
+    	  "command" : "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    	  "version" : "30.0.1599.69",
+    	  "windows" : true,
+    	  "name" : "chrome",
+    	  "type" : "chrome",
+    	  "profile" : false
+      }
+    ]
+  }
+}

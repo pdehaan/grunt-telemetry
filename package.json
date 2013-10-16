@@ -2,16 +2,34 @@
   "name": "grunt-telemetry",
   "version": "0.0.0",
   "description": "Implementation of Telemetry using Grunt",
+  "readme": "Implementation of Telemetry using Grunt",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/test.js"
   },
   "author": "Parashuram <code@r.nparashuram.com>",
-  "license": "BSD",
+  "license": "Apache 2.0",
   "dependencies": {
     "browser-launcher": "~0.3.4",
-    "express": "~3.4.0"
+    "express": "~3.4.0",
+    "commander": "~2.0.0"
   },
   "devDependencies": {
     "grunt": "~0.4.1"
+  },
+  "main": "tasks/lib/cli.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/axemclion/grunt-telemetry.git"
+  },
+  "keywords": [
+    "grunt",
+    "telemetry",
+    "browsers"
+  ],
+  "bugs": {
+    "url": "https://github.com/axemclion/grunt-telemetry/issues"
   }
 }
