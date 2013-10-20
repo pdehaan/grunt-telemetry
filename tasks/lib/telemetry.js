@@ -5,17 +5,16 @@ module.exports = (function() {
 	var app = express();
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
+	var browserConfig = null;
 
 	// Takes a page component and inserts all the telemetry scripts into the
 	// page
 
 	function telemetryPage(page) {
 		var pageScripts = [ '\n<script type = "text/javascript">\n' ];
-		[ 'smoothness_measurement.js', 'scroll.js', 'benchmarks.js' ]
-				.forEach(function(file) {
-					pageScripts.push(fs.readFileSync(__dirname
-							+ '/page_scripts/' + file, 'utf-8'));
-				});
+		[ 'smoothness_measurement.js', 'scroll.js', 'benchmarks.js' ].forEach(function(file) {
+			pageScripts.push(fs.readFileSync(__dirname + '/page_scripts/' + file, 'utf-8'));
+		});
 		pageScripts.push('</script>');
 
 		var html = fs.readFileSync(page, 'utf-8');
@@ -57,36 +56,76 @@ module.exports = (function() {
 		});
 	}
 
+	var browsers = {
+		'chrome' : {
+			browser : 'chrome',
+			options : [ '--enable-gpu-benchmarking', '--enable-threaded-compositing', '--cancel-first-run', '--bwsi', '--no-first-run' ]
+		},
+		'ie' : {
+			browser : 'ie',
+		// options : ['-extoff', '-private']
+		},
+		'firefox' : {
+			browser : 'firefox'
+		}
+	};
+
 	function openPageInBrowser(browserName, page, cb) {
+		if (typeof cb !== 'function') {
+			cb = new Function();
+		}
 		var launcher = require('browser-launcher');
-		launcher({
-			config : __dirname + "/config.json"
-		}, function(err, launch) {
+		launcher(browserConfig || {}, function(err, launch) {
 			if (err) {
 				cb(false);
 			} else {
-				launch('http://localhost:3000/', {
-					browser : browserName,
-					options : ["--enable-gpu-benchmarking", "--enable-threaded-compositing"]
-				}, function(err, ps) {
-					cb(err ? err : ps);
+				launch('http://localhost:3000/?' + Math.random(), browsers[browserName], function(err, ps) {
+					cb(typeof ps === 'undefined' ? false : ps);
 				});
 			}
 		});
 	}
 
 	return {
+		setup : function(opts) {
+			browserConfig = opts
+		},
+
 		serve : function(page) {
 			console.log('Serving page at 3000');
 			servePage(page);
 			app.listen(3000);
 		},
 
-		run : function(page, cb) {
+		run : function(page, browserName, cb) {
 			servePage(page);
-			collectData(page, function(data) {});
-			app.listen(3000);
-			openPageInBrowser("chrome", page, cb);
+			var browser = null;
+			collectData(page, function(data) {
+				console.log('Data collected from the browser');
+				close(data);
+			});
+
+			function close(data) {
+				server.close();
+				if (browser) {
+					console.log('Closing Browser');
+					browser.kill();
+				}
+				cb(data);
+			}
+
+			var server = app.listen(3000);
+			openPageInBrowser(browserName, page, function(ps) {
+				if (ps === false) {
+					close();
+				} else {
+					browser = ps;
+				}
+			});
+		},
+
+		availableBrowsers : function() {
+			return browsers;
 		}
 	}
 

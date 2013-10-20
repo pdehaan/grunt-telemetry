@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "description": "Implementation of Telemetry using Grunt",
   "readme": "Implementation of Telemetry using Grunt",
+  "main": "tasks/lib/index.js",
   "scripts": {
-    "test": "node test/test.js"
+    "start": "node tasks/lib/cli.js",
+    "test": "node node_modules/mocha/bin/mocha --reporter spec"
   },
   "author": "Parashuram <code@r.nparashuram.com>",
   "license": "Apache 2.0",
@@ -14,9 +16,10 @@
     "commander": "~2.0.0"
   },
   "devDependencies": {
-    "grunt": "~0.4.1"
+    "grunt": "~0.4.1",
+    "mocha": "~1.13.0",
+    "expect.js": "~0.2.0"
   },
-  "main": "tasks/lib/cli.js",
   "directories": {
     "test": "test"
   },

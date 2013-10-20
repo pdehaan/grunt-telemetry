@@ -1,14 +1,13 @@
 /**
- Script inserted into the page to collect various benchmarks
-**/
+ * Script inserted into the page to collect various benchmarks
+ */
 
 'use strict';
-
 (function(window, undefined) {
-
 	var results = {};
+	window.addEventListener('load', getStats,  true);
 
-	document.addEventListener('load', function() {
+	function getStats() {
 		// Load Timing from page
 		var load_timings = window.performance.timing;
 		results['load_time_ms'] = load_timings['loadEventStart'] - load_timings['navigationStart'];
@@ -21,23 +20,27 @@
 		var action = new __ScrollAction(function() {
 			stats.stop();
 			var rendering_stats_deltas = stats.getDeltas();
-			calcFirstPaintTimeResults(results);
-			calcScrollResults(rendering_stats_deltas, results)
-			calcTextureUploadResults(rendering_stats_deltas, results)
-			calcImageDecodingResults(rendering_stats_deltas, results)
-			sendData(results);
+			calcScrollResults(rendering_stats_deltas, results);
+			calcTextureUploadResults(rendering_stats_deltas, results);
+			calcImageDecodingResults(rendering_stats_deltas, results);
+			calcFirstPaintTimeResults(results, function() {
+				sendData(results);
+			});
 		});
 		action.start(document.body);
-		stats.stop();
-	}, true);
+	}
 
-	function calcFirstPaintTimeResults(results) {
+	function calcFirstPaintTimeResults(results, cb) {
 		results['first_paint'] = null;
 		if (typeof window.chrome !== 'undefined') {
 			window.webkitRequestAnimationFrame(function() {
 				var first_paint_secs = window.chrome.loadTimes().firstPaintTime - window.chrome.loadTimes().startLoadTime;
 				results['first_paint'] = first_paint_secs * 1000;
+				cb();
 			});
+		} else if (window.performance.timing.msFirstPaint) {
+			results['first_paint'] = window.performance.timing.msFirstPaint - window.performance.timing.navigationStart;
+			cb();
 		}
 	}
 
@@ -47,7 +50,8 @@
 		var dropped_percent = rendering_stats_deltas['droppedFrameCount'] / num_frames_sent_to_screen;
 		var num_impl_thread_scrolls = rendering_stats_deltas['numImplThreadScrolls'] || 0;
 		var num_main_thread_scrolls = rendering_stats_deltas['numMainThreadScrolls'] || 0;
-		var percent_impl_scrolled = (num_impl_thread_scrolls + num_main_thread_scrolls) === 0 ? 0 : num_impl_thread_scrolls / (num_impl_thread_scrolls + num_main_thread_scrolls);
+		var percent_impl_scrolled = (num_impl_thread_scrolls + num_main_thread_scrolls) === 0 ? 0 : num_impl_thread_scrolls
+				/ (num_impl_thread_scrolls + num_main_thread_scrolls);
 		var num_layers = (rendering_stats_deltas['numLayersDrawn'] || 0) / num_frames_sent_to_screen;
 		var num_missing_tiles = (rendering_stats_deltas['numMissingTiles'] || 0) / num_frames_sent_to_screen;
 
@@ -83,20 +87,19 @@
 	}
 
 	function sendData(data) {
-		var xmlhttp = null;
-		if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
-			xmlhttp = new XMLHttpRequest();
-		} else { // code for IE6, IE5
-			xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-		}
-
-		xmlhttp.open("POST", '/data', true);
-		xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.open('POST', '/data', true);
+		xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 		var params = [];
-		for (var key in data) {
+		for ( var key in data) {
 			params.push(encodeURIComponent(key), '=', encodeURIComponent(data[key]), '&');
 		}
 		xmlhttp.send(params.join(''));
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState === 4 && xmlhttp.status !== 200) {
+				console.dir(results);
+			}
+		};
 	}
 
 }(window));
