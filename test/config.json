@@ -16,6 +16,12 @@
     	  "name" : "chrome",
     	  "type" : "chrome",
     	  "profile" : false
+      }, {
+      	"command" : "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
+      	"version" : "24.0",
+      	"windows" : true,
+      	"name" : "firefox",
+      	"type" : "firefox"
       }
     ]
   }
