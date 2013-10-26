@@ -29,6 +29,7 @@
   },
   "keywords": [
     "grunt",
+    "gruntplugin",
     "telemetry",
     "browsers"
   ],
